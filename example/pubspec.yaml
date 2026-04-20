@@ -1,0 +1,22 @@
+name: flutter_filament_example
+description: Minimal example app demonstrating flutter_filament.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.11.4
+  flutter: '>=3.22.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_filament:
+    path: ../
+  go_router: ^17.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
