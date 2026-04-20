@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../forms/form_builder_widget.dart';
 import '../forms/form_state.dart';
 import '../layout/panel_layout.dart';
+import '../panel/panel_provider.dart';
 import '../resource/resource.dart';
 import '../resource/resource_context.dart';
+import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
 
 /// Edit page of a [Resource]. Loads record by id, mutates via data source.
@@ -27,6 +29,17 @@ class _EditRecordPageState<T> extends State<EditRecordPage<T>> {
   bool _loading = true;
   bool _saving = false;
   Object? _error;
+
+  void _goBackToList() {
+    final panel = PanelProvider.of(context);
+    final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
+    final unscoped = panel.isTenantResourceSlug(widget.resource.slug);
+    context.go(panel.resourcePath(
+      widget.resource.slug,
+      tenantId: tenantId,
+      unscoped: unscoped,
+    ));
+  }
 
   @override
   void initState() {
@@ -82,7 +95,7 @@ class _EditRecordPageState<T> extends State<EditRecordPage<T>> {
             content: Text(
                 '${widget.resource.label} "${widget.resource.recordTitle(updated)}" diperbarui')),
       );
-      context.goNamed('${widget.resource.slug}.list');
+      _goBackToList();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +126,7 @@ class _EditRecordPageState<T> extends State<EditRecordPage<T>> {
     try {
       await widget.resource.dataSource.delete(widget.recordId);
       if (!mounted) return;
-      context.goNamed('${widget.resource.slug}.list');
+      _goBackToList();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,7 +166,7 @@ class _EditRecordPageState<T> extends State<EditRecordPage<T>> {
           onPressed: _delete,
         ),
         OutlinedButton(
-          onPressed: () => context.goNamed('${widget.resource.slug}.list'),
+          onPressed: _goBackToList,
           child: const Text('Batal'),
         ),
         FilledButton.icon(

@@ -477,67 +477,101 @@ class _Toolbar<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FilamentThemeScope.of(context);
-    return Wrap(
+
+    final leftSide = <Widget>[
+      if (schema.searchable)
+        SizedBox(
+          width: 280,
+          child: TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              hintText: schema.searchPlaceholder ?? 'Cari...',
+              prefixIcon: const Icon(Icons.search, size: 18),
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(theme.borderRadius),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(theme.borderRadius),
+                borderSide: BorderSide(color: theme.border),
+              ),
+            ),
+          ),
+        ),
+      for (final f in schema.filters)
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField(
+            initialValue: filters[f.name],
+            decoration: InputDecoration(
+              labelText: f.label,
+              isDense: true,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(theme.borderRadius),
+              ),
+            ),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Semua')),
+              for (final o in f.options)
+                DropdownMenuItem(value: o.value, child: Text(o.label)),
+            ],
+            onChanged: (v) => onFilterChanged(f.name, v),
+          ),
+        ),
+    ];
+
+    final rightSide = <Widget>[
+      IconButton(
+        tooltip: 'Muat ulang',
+        onPressed: onRefresh,
+        icon: const Icon(Icons.refresh),
+      ),
+      for (final a in schema.headerActions)
+        FilledButton.icon(
+          onPressed: () => a.onPressed(context),
+          icon: Icon(a.icon ?? Icons.add, size: 16),
+          label: Text(a.label),
+          style: FilledButton.styleFrom(
+            backgroundColor: _actionColor(a.color, theme),
+          ),
+        ),
+    ];
+
+    final leftWrap = Wrap(
       spacing: 8,
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        if (schema.searchable)
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: searchController,
-              onChanged: onSearchChanged,
-              decoration: InputDecoration(
-                hintText: schema.searchPlaceholder ?? 'Cari...',
-                prefixIcon: const Icon(Icons.search, size: 18),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(theme.borderRadius),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(theme.borderRadius),
-                  borderSide: BorderSide(color: theme.border),
-                ),
-              ),
-            ),
-          ),
-        for (final f in schema.filters)
-          SizedBox(
-            width: 180,
-            child: DropdownButtonFormField(
-              initialValue: filters[f.name],
-              decoration: InputDecoration(
-                labelText: f.label,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(theme.borderRadius),
-                ),
-              ),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Semua')),
-                for (final o in f.options)
-                  DropdownMenuItem(value: o.value, child: Text(o.label)),
-              ],
-              onChanged: (v) => onFilterChanged(f.name, v),
-            ),
-          ),
-        const Spacer(),
-        IconButton(
-          tooltip: 'Muat ulang',
-          onPressed: onRefresh,
-          icon: const Icon(Icons.refresh),
-        ),
-        for (final a in schema.headerActions)
-          FilledButton.icon(
-            onPressed: () => a.onPressed(context),
-            icon: Icon(a.icon ?? Icons.add, size: 16),
-            label: Text(a.label),
-            style: FilledButton.styleFrom(
-              backgroundColor: _actionColor(a.color, theme),
-            ),
-          ),
-      ],
+      children: leftSide,
+    );
+    final rightWrap = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: rightSide,
+    );
+
+    return LayoutBuilder(
+      builder: (ctx, c) {
+        final narrow = c.maxWidth < 600;
+        if (narrow) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              leftWrap,
+              const SizedBox(height: 8),
+              rightWrap,
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: leftWrap),
+            rightWrap,
+          ],
+        );
+      },
     );
   }
 }

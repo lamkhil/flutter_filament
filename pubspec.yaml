@@ -1,6 +1,6 @@
 name: flutter_filament
 description: Filament 5-inspired admin panel framework for Flutter. Schema-driven forms, tables, resources with auto-generated CRUD pages.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/lamkhil/flutter_filament
 repository: https://github.com/lamkhil/flutter_filament
 issue_tracker: https://github.com/lamkhil/flutter_filament/issues

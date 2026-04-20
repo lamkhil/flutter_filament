@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../panel/panel_provider.dart';
 import '../resource/resource.dart';
 import '../tables/table_builder_widget.dart';
+import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
 import '../layout/panel_layout.dart';
 
@@ -13,17 +15,25 @@ class ListRecordsPage<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasCreate = resource
-        .pages()
-        .any((p) => p.name == 'create');
+    final panel = PanelProvider.of(context);
+    final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
+    final unscoped = panel.isTenantResourceSlug(resource.slug);
+    final hasCreate = resource.pages().any((p) => p.name == 'create');
+
+    String pathFor(String? sub) => panel.resourcePath(
+          resource.slug,
+          subPath: sub,
+          tenantId: tenantId,
+          unscoped: unscoped,
+        );
+
     return PanelLayout(
       title: resource.pluralLabel,
       subtitle: 'Kelola data ${resource.label.toLowerCase()}',
       headerActions: [
         if (hasCreate)
           FilledButton.icon(
-            onPressed: () =>
-                context.goNamed('${resource.slug}.create'),
+            onPressed: () => context.go(pathFor('create')),
             icon: const Icon(Icons.add, size: 16),
             label: Text('Tambah ${resource.label}'),
             style: FilledButton.styleFrom(
@@ -36,12 +46,7 @@ class ListRecordsPage<T> extends StatelessWidget {
         schema: resource.table(),
         dataSource: resource.dataSource,
         idOf: resource.recordId,
-        onRowTap: (row) {
-          context.goNamed(
-            '${resource.slug}.view',
-            pathParameters: {'id': resource.recordId(row)},
-          );
-        },
+        onRowTap: (row) => context.go(pathFor(resource.recordId(row))),
       ),
     );
   }

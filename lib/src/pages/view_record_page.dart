@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../layout/panel_layout.dart';
+import '../panel/panel_provider.dart';
 import '../resource/resource.dart';
 import '../resource/resource_context.dart';
+import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
 
 /// Read-only detail page of a [Resource]. Renders each field from the
@@ -70,22 +72,33 @@ class _ViewRecordPageState<T> extends State<ViewRecordPage<T>> {
       record: _record,
     ));
     final hasEdit = widget.resource.pages().any((p) => p.name == 'edit');
+    final panel = PanelProvider.of(context);
+    final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
+    final unscoped = panel.isTenantResourceSlug(widget.resource.slug);
+    final listPath = panel.resourcePath(
+      widget.resource.slug,
+      tenantId: tenantId,
+      unscoped: unscoped,
+    );
+    final editPath = panel.resourcePath(
+      widget.resource.slug,
+      subPath: '${widget.recordId}/edit',
+      tenantId: tenantId,
+      unscoped: unscoped,
+    );
 
     return PanelLayout(
       title: widget.resource.recordTitle(_record as T),
       subtitle: 'Detail ${widget.resource.label.toLowerCase()}',
       headerActions: [
         OutlinedButton.icon(
-          onPressed: () => context.goNamed('${widget.resource.slug}.list'),
+          onPressed: () => context.go(listPath),
           icon: const Icon(Icons.arrow_back, size: 16),
           label: const Text('Kembali'),
         ),
         if (hasEdit)
           FilledButton.icon(
-            onPressed: () => context.goNamed(
-              '${widget.resource.slug}.edit',
-              pathParameters: {'id': widget.recordId},
-            ),
+            onPressed: () => context.go(editPath),
             icon: const Icon(Icons.edit, size: 16),
             label: const Text('Edit'),
             style: FilledButton.styleFrom(

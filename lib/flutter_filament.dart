@@ -26,6 +26,7 @@ export 'src/forms/components/textarea.dart';
 export 'src/forms/components/select.dart';
 export 'src/forms/components/toggle.dart';
 export 'src/forms/components/checkbox.dart';
+export 'src/forms/components/checkbox_list.dart';
 export 'src/forms/components/date_picker.dart';
 export 'src/forms/components/number_input.dart';
 export 'src/forms/components/section.dart';
@@ -67,6 +68,12 @@ export 'src/widgets/table_widget.dart';
 // Panel & navigation
 export 'src/panel/panel.dart';
 export 'src/panel/panel_provider.dart';
+
+// Tenancy
+export 'src/tenant/tenant_config.dart';
+export 'src/tenant/tenant_access.dart';
+export 'src/tenant/tenant_scope.dart';
+export 'src/tenant/tenant_switcher.dart';
 export 'src/navigation/navigation_item.dart';
 export 'src/navigation/navigation_group.dart';
 export 'src/layout/panel_layout.dart';

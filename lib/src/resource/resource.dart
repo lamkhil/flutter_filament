@@ -7,6 +7,8 @@ import '../pages/create_record_page.dart';
 import '../pages/edit_record_page.dart';
 import '../pages/list_records_page.dart';
 import '../pages/view_record_page.dart';
+import '../panel/panel.dart';
+import '../panel/panel_provider.dart';
 import '../tables/table_schema.dart';
 import 'resource_context.dart';
 import 'resource_page_def.dart';
@@ -66,24 +68,35 @@ abstract class Resource<T> {
   List<RowAction<T>> extraRowActions() => const [];
 
   /// Build a tree of [GoRoute]s for this resource. Called by the Panel.
-  GoRoute buildRoute(String panelPath) {
+  /// [panel] dipakai untuk wrap setiap page dengan [PanelProvider] supaya
+  /// `PanelLayout.of(context)` berhasil di dalam list/create/edit/view.
+  ///
+  /// Semua page memakai [NoTransitionPage] — pindah halaman dalam panel
+  /// tanpa animasi (mengikuti UX admin panel).
+  GoRoute buildRoute(String panelPath, {Panel? panel}) {
     final base = '$panelPath/$slug';
     final pages = this.pages();
+    Widget wrap(Widget child) =>
+        panel == null ? child : PanelProvider(panel: panel, child: child);
+    Page<dynamic> page(Widget child, GoRouterState state) =>
+        NoTransitionPage(key: state.pageKey, child: wrap(child));
 
+    // Tidak pakai `name:` — multi-tenant mode men-register route yang sama
+    // dua kali (admin-flat + tenant-scoped) dan name harus unik di GoRouter.
+    // Navigasi antar page pakai `context.go(panel.resourcePath(...))`.
     final list = pages.firstWhere(
       (p) => p.kind == DefaultPageKind.list,
       orElse: () => ResourcePageDef(path: '', name: 'list'),
     );
     return GoRoute(
       path: base,
-      name: '$slug.${list.name}',
-      builder: (ctx, state) => _buildForKind(ctx, state, list),
+      pageBuilder: (ctx, state) => page(_buildForKind(ctx, state, list), state),
       routes: [
         for (final p in pages.where((p) => p.kind != DefaultPageKind.list))
           GoRoute(
             path: p.path,
-            name: '$slug.${p.name}',
-            builder: (ctx, state) => _buildForKind(ctx, state, p),
+            pageBuilder: (ctx, state) =>
+                page(_buildForKind(ctx, state, p), state),
           ),
       ],
     );

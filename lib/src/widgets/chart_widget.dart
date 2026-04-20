@@ -33,9 +33,12 @@ class ChartWidget extends DashboardWidget {
   Widget build(BuildContext context) {
     final theme = FilamentThemeScope.of(context);
     final c = color ?? theme.colors.primary;
-    final maxV = data.isEmpty
-        ? 1.0
+    // Guard against empty data OR all-zero data (would make maxV == 0 →
+    // NaN saat dipakai sebagai divisor di tinggi bar).
+    final rawMax = data.isEmpty
+        ? 0.0
         : data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    final maxV = rawMax <= 0 ? 1.0 : rawMax;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

@@ -4,6 +4,8 @@ import '../navigation/navigation_group.dart';
 import '../navigation/navigation_item.dart';
 import '../panel/panel.dart';
 import '../panel/panel_provider.dart';
+import '../tenant/tenant_scope.dart';
+import '../tenant/tenant_switcher.dart';
 import '../theme/filament_theme.dart';
 
 /// Mobile-threshold width.
@@ -151,6 +153,8 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          const TenantSwitcher(),
+          if (actions.isNotEmpty) const SizedBox(width: 8),
           Wrap(
             spacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -171,7 +175,8 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = FilamentThemeScope.of(context);
-    final groups = panel.buildNavigation();
+    final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
+    final groups = panel.buildNavigation(tenantId: tenantId);
     final currentRoute = GoRouterState.of(context).uri.toString();
     return Container(
       decoration: BoxDecoration(

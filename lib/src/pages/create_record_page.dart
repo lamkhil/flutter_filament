@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../forms/form_builder_widget.dart';
 import '../forms/form_state.dart';
 import '../layout/panel_layout.dart';
+import '../panel/panel_provider.dart';
 import '../resource/resource.dart';
 import '../resource/resource_context.dart';
+import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
 
 /// Create page of a [Resource].
@@ -19,6 +21,17 @@ class CreateRecordPage<T> extends StatefulWidget {
 class _CreateRecordPageState<T> extends State<CreateRecordPage<T>> {
   final _state = FormStateController();
   bool _saving = false;
+
+  void _goBackToList() {
+    final panel = PanelProvider.of(context);
+    final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
+    final unscoped = panel.isTenantResourceSlug(widget.resource.slug);
+    context.go(panel.resourcePath(
+      widget.resource.slug,
+      tenantId: tenantId,
+      unscoped: unscoped,
+    ));
+  }
 
   Future<void> _save() async {
     final schema = widget.resource.form(
@@ -38,7 +51,7 @@ class _CreateRecordPageState<T> extends State<CreateRecordPage<T>> {
             content: Text(
                 '${widget.resource.label} "${widget.resource.recordTitle(record)}" dibuat')),
       );
-      context.goNamed('${widget.resource.slug}.list');
+      _goBackToList();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +73,7 @@ class _CreateRecordPageState<T> extends State<CreateRecordPage<T>> {
       subtitle: 'Buat data ${widget.resource.label.toLowerCase()} baru',
       headerActions: [
         OutlinedButton(
-          onPressed: () => context.goNamed('${widget.resource.slug}.list'),
+          onPressed: _goBackToList,
           child: const Text('Batal'),
         ),
         FilledButton.icon(

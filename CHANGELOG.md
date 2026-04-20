@@ -18,3 +18,6 @@
   implementation.
 - Mason bricks: `model`, `resource`, `page`, `widget` with `post_gen`
   hooks for auto-registration into `panel_config.dart`.
+
+## 0.1.1
+- Fix null pointer di parser
