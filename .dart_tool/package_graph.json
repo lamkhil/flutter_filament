@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "flutter_filament",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "dependencies": [
         "equatable",
         "flutter",
