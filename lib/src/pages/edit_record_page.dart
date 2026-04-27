@@ -8,6 +8,7 @@ import '../resource/resource.dart';
 import '../resource/resource_context.dart';
 import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
+import '../widgets/relation_tabs.dart';
 
 /// Edit page of a [Resource]. Loads record by id, mutates via data source.
 class EditRecordPage<T> extends StatefulWidget {
@@ -183,14 +184,24 @@ class _EditRecordPageState<T> extends State<EditRecordPage<T>> {
               FilledButton.styleFrom(backgroundColor: theme.colors.primary),
         ),
       ],
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          border: Border.all(color: theme.border),
-          borderRadius: BorderRadius.circular(theme.borderRadius),
-        ),
-        child: FormBuilderWidget(schema: schema, state: _state),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.surface,
+              border: Border.all(color: theme.border),
+              borderRadius: BorderRadius.circular(theme.borderRadius),
+            ),
+            child: FormBuilderWidget(schema: schema, state: _state),
+          ),
+          if (widget.resource.relations().isNotEmpty)
+            RelationTabs(
+              parent: _record,
+              managers: widget.resource.relations(),
+            ),
+        ],
       ),
     );
   }

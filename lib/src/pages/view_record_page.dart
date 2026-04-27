@@ -6,6 +6,7 @@ import '../resource/resource.dart';
 import '../resource/resource_context.dart';
 import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
+import '../widgets/relation_tabs.dart';
 
 /// Read-only detail page of a [Resource]. Renders each field from the
 /// form schema as a static label/value row.
@@ -71,7 +72,7 @@ class _ViewRecordPageState<T> extends State<ViewRecordPage<T>> {
       operation: ResourceOperation.view,
       record: _record,
     ));
-    final hasEdit = widget.resource.pages().any((p) => p.name == 'edit');
+    final hasEdit = widget.resource.hasEditPage;
     final panel = PanelProvider.of(context);
     final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
     final unscoped = panel.isTenantResourceSlug(widget.resource.slug);
@@ -105,26 +106,36 @@ class _ViewRecordPageState<T> extends State<ViewRecordPage<T>> {
                 backgroundColor: theme.colors.primary),
           ),
       ],
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.surface,
-          border: Border.all(color: theme.border),
-          borderRadius: BorderRadius.circular(theme.borderRadius),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final field in schema.fields)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: _DetailRow(
-                  label: field.label,
-                  value: _formatValue(data[field.name]),
-                ),
-              ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.surface,
+              border: Border.all(color: theme.border),
+              borderRadius: BorderRadius.circular(theme.borderRadius),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final field in schema.fields)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: _DetailRow(
+                      label: field.label,
+                      value: _formatValue(data[field.name]),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (widget.resource.relations().isNotEmpty)
+            RelationTabs(
+              parent: _record,
+              managers: widget.resource.relations(),
+            ),
+        ],
       ),
     );
   }

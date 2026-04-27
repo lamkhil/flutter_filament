@@ -49,21 +49,23 @@ export 'src/actions/row_action.dart';
 export 'src/actions/header_action.dart';
 export 'src/actions/bulk_action.dart';
 
-// Resource & pages
+// Resource, pages & relations
 export 'src/resource/resource.dart';
-export 'src/resource/resource_page_def.dart';
+export 'src/resource/resource_page.dart';
 export 'src/resource/resource_context.dart';
+export 'src/resource/relation_manager.dart';
 export 'src/pages/filament_page.dart';
 export 'src/pages/list_records_page.dart';
 export 'src/pages/create_record_page.dart';
 export 'src/pages/edit_record_page.dart';
 export 'src/pages/view_record_page.dart';
 
-// Dashboard widgets
+// Dashboard & layout widgets
 export 'src/widgets/dashboard_widget.dart';
 export 'src/widgets/stat_widget.dart';
 export 'src/widgets/chart_widget.dart';
 export 'src/widgets/table_widget.dart';
+export 'src/widgets/relation_tabs.dart';
 
 // Panel & navigation
 export 'src/panel/panel.dart';

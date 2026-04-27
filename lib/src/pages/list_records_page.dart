@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../panel/panel_provider.dart';
 import '../resource/resource.dart';
+import '../resource/resource_page.dart';
 import '../tables/table_builder_widget.dart';
 import '../tenant/tenant_scope.dart';
 import '../theme/filament_theme.dart';
@@ -18,7 +19,10 @@ class ListRecordsPage<T> extends StatelessWidget {
     final panel = PanelProvider.of(context);
     final tenantId = TenantScopeProvider.maybeOf(context)?.currentId;
     final unscoped = panel.isTenantResourceSlug(resource.slug);
-    final hasCreate = resource.pages().any((p) => p.name == 'create');
+    final hasCreate = resource
+        .pages()
+        .values
+        .any((p) => p.kind == ResourcePageKind.create);
 
     String pathFor(String? sub) => panel.resourcePath(
           resource.slug,

@@ -10,16 +10,22 @@ import '../pages/view_record_page.dart';
 import '../panel/panel.dart';
 import '../panel/panel_provider.dart';
 import '../tables/table_schema.dart';
+import 'relation_manager.dart';
 import 'resource_context.dart';
-import 'resource_page_def.dart';
+import 'resource_page.dart';
 
 /// A model-backed resource with list/create/edit/view pages.
-/// Filament equivalent: `Filament\Resources\Resource`.
+///
+/// Filament equivalent: `Filament\Resources\Resource`. Override the abstract
+/// getters/methods to declare schema, table, relations, and pages — the
+/// framework builds routes, navigation entries, and CRUD UI automatically.
 abstract class Resource<T> {
-  /// Slug segment used in the URL (e.g. `'produk'` → `/admin/produk`).
+  // ── Identity & navigation ────────────────────────────────────────────────
+
+  /// Slug segment used in the URL (e.g. `'users'` → `/admin/users`).
   String get slug;
 
-  /// Singular human label (Indonesian by default).
+  /// Singular human label.
   String get label;
 
   /// Plural form shown on list page and navigation.
@@ -37,6 +43,8 @@ abstract class Resource<T> {
   /// Should this resource appear in the sidebar? Default: yes.
   bool get hiddenFromNavigation => false;
 
+  // ── Data ─────────────────────────────────────────────────────────────────
+
   /// The data source (Firestore / REST / memory).
   DataSource<T> get dataSource;
 
@@ -49,30 +57,41 @@ abstract class Resource<T> {
   /// Converts a fully-populated record into form values for the edit page.
   Map<String, dynamic> toFormData(T record);
 
+  // ── Schema ───────────────────────────────────────────────────────────────
+
   /// Form schema — can branch by `ctx.operation`.
   FormSchema form(ResourceContext<T> ctx);
 
   /// Table schema for the list page.
   TableSchema<T> table();
 
-  /// Override to customise which pages exist. Default: list, create, edit, view.
-  List<ResourcePageDef> pages() => [
-        ResourcePageDef.list(),
-        ResourcePageDef.create(),
-        ResourcePageDef.edit(),
-        ResourcePageDef.view(),
-      ];
+  // ── Relations & pages ────────────────────────────────────────────────────
 
-  /// Hook: extra row actions beyond the defaults. Implementations may merge
-  /// these with the ones declared on [table]`.rowActions`.
+  /// Relation managers shown as tabs on edit/view pages.
+  /// Filament: `Resource::getRelations()`.
+  List<RelationManager> relations() => const [];
+
+  /// Pages registered under this resource. Keys identify the page within
+  /// the resource (e.g. `'index'`, `'create'`); values declare the route.
+  /// Default: list/create/view/edit. Override to drop pages or add custom
+  /// ones via [ResourcePage.custom].
+  ///
+  /// Filament: `Resource::getPages()`.
+  Map<String, ResourcePage<T>> pages() => {
+        'index': ResourcePage.list<T>(),
+        'create': ResourcePage.create<T>(),
+        'view': ResourcePage.view<T>(),
+        'edit': ResourcePage.edit<T>(),
+      };
+
+  /// Hook: extra row actions beyond the defaults declared in [table].
   List<RowAction<T>> extraRowActions() => const [];
 
+  // ── Internal route building ──────────────────────────────────────────────
+
   /// Build a tree of [GoRoute]s for this resource. Called by the Panel.
-  /// [panel] dipakai untuk wrap setiap page dengan [PanelProvider] supaya
-  /// `PanelLayout.of(context)` berhasil di dalam list/create/edit/view.
   ///
-  /// Semua page memakai [NoTransitionPage] — pindah halaman dalam panel
-  /// tanpa animasi (mengikuti UX admin panel).
+  /// All pages use [NoTransitionPage] — admin panel UX.
   GoRoute buildRoute(String panelPath, {Panel? panel}) {
     final base = '$panelPath/$slug';
     final pages = this.pages();
@@ -81,46 +100,54 @@ abstract class Resource<T> {
     Page<dynamic> page(Widget child, GoRouterState state) =>
         NoTransitionPage(key: state.pageKey, child: wrap(child));
 
-    // Tidak pakai `name:` — multi-tenant mode men-register route yang sama
-    // dua kali (admin-flat + tenant-scoped) dan name harus unik di GoRouter.
-    // Navigasi antar page pakai `context.go(panel.resourcePath(...))`.
-    final list = pages.firstWhere(
-      (p) => p.kind == DefaultPageKind.list,
-      orElse: () => ResourcePageDef(path: '', name: 'list'),
+    final indexEntry = pages.entries.firstWhere(
+      (e) => e.value.kind == ResourcePageKind.list || e.value.path.isEmpty,
+      orElse: () =>
+          MapEntry('index', ResourcePage<T>(path: '', kind: ResourcePageKind.list)),
     );
+
     return GoRoute(
       path: base,
-      pageBuilder: (ctx, state) => page(_buildForKind(ctx, state, list), state),
+      pageBuilder: (ctx, state) =>
+          page(_build(ctx, state, indexEntry.value), state),
       routes: [
-        for (final p in pages.where((p) => p.kind != DefaultPageKind.list))
+        for (final entry in pages.entries.where((e) => e.key != indexEntry.key))
           GoRoute(
-            path: p.path,
+            path: entry.value.path,
             pageBuilder: (ctx, state) =>
-                page(_buildForKind(ctx, state, p), state),
+                page(_build(ctx, state, entry.value), state),
           ),
       ],
     );
   }
 
-  Widget _buildForKind(BuildContext ctx, GoRouterState state,
-      ResourcePageDef page) {
+  Widget _build(BuildContext ctx, GoRouterState state, ResourcePage<T> page) {
+    if (page.builder != null) return page.builder!(ctx, state, this);
     switch (page.kind) {
-      case DefaultPageKind.list:
+      case ResourcePageKind.list:
         return ListRecordsPage<T>(resource: this);
-      case DefaultPageKind.create:
+      case ResourcePageKind.create:
         return CreateRecordPage<T>(resource: this);
-      case DefaultPageKind.edit:
+      case ResourcePageKind.edit:
         return EditRecordPage<T>(
           resource: this,
           recordId: state.pathParameters['id']!,
         );
-      case DefaultPageKind.view:
+      case ResourcePageKind.view:
         return ViewRecordPage<T>(
           resource: this,
           recordId: state.pathParameters['id']!,
         );
       case null:
-        return page.builder!(ctx, state);
+        throw StateError('ResourcePage missing both kind and builder');
     }
   }
+
+  /// Returns true if this resource has an edit page (default or custom).
+  bool get hasEditPage =>
+      pages().values.any((p) => p.kind == ResourcePageKind.edit);
+
+  /// Returns true if this resource has a view page.
+  bool get hasViewPage =>
+      pages().values.any((p) => p.kind == ResourcePageKind.view);
 }
