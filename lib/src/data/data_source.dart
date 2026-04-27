@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'paginated_result.dart';
 
 /// Abstract data source for a [Resource]. Implement to back a resource
@@ -5,6 +7,23 @@ import 'paginated_result.dart';
 ///
 /// Filament equivalent: Eloquent model + its query builder.
 abstract class DataSource<T> {
+  final ValueNotifier<int> _changeTicker = ValueNotifier(0);
+
+  /// Listenable yang fire setiap kali data berubah lewat data source ini
+  /// (`create` / `update` / `delete`). Dipakai oleh `TableBuilderWidget`
+  /// untuk re-fetch otomatis setelah mutasi — termasuk ketika edit page
+  /// kembali ke list lewat `context.go(...)` (GoRouter mempertahankan
+  /// instance list page sehingga `initState` tidak terpicu lagi).
+  ///
+  /// Concrete subclass wajib memanggil [notifyChanged] setelah mutasi
+  /// untuk men-trigger refresh. `MemoryDataSource` sudah melakukannya;
+  /// custom implementation perlu menambahkan sendiri.
+  Listenable get onChange => _changeTicker;
+
+  /// Bump ticker → semua listener `onChange` dipanggil.
+  @protected
+  void notifyChanged() => _changeTicker.value++;
+
   Future<PaginatedResult<T>> list(ListQuery query);
 
   Future<T?> get(String id);

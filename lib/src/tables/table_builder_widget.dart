@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../actions/action.dart';
 import '../actions/row_action.dart';
 import '../data/data_source.dart';
 import '../data/paginated_result.dart';
 import '../theme/filament_theme.dart';
+import '../widgets/error_view.dart';
 import 'table_column.dart';
 import 'table_schema.dart';
 
@@ -43,13 +45,28 @@ class _TableBuilderWidgetState<T> extends State<TableBuilderWidget<T>> {
       sortBy: widget.schema.defaultSort,
       sortDesc: widget.schema.defaultSortDesc,
     );
+    widget.dataSource.onChange.addListener(_onSourceChanged);
     _fetch();
   }
 
   @override
+  void didUpdateWidget(covariant TableBuilderWidget<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.dataSource, widget.dataSource)) {
+      oldWidget.dataSource.onChange.removeListener(_onSourceChanged);
+      widget.dataSource.onChange.addListener(_onSourceChanged);
+    }
+  }
+
+  @override
   void dispose() {
+    widget.dataSource.onChange.removeListener(_onSourceChanged);
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSourceChanged() {
+    if (mounted) _fetch();
   }
 
   Future<void> refresh() => _fetch();
@@ -177,20 +194,7 @@ class _TableBuilderWidgetState<T> extends State<TableBuilderWidget<T>> {
       );
     }
     if (_error != null) {
-      return Padding(
-        padding: const EdgeInsets.all(40),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline,
-                  color: theme.colors.danger, size: 36),
-              const SizedBox(height: 8),
-              Text('$_error', style: TextStyle(color: theme.textSecondary)),
-            ],
-          ),
-        ),
-      );
+      return ErrorView(error: _error!, onRetry: refresh);
     }
     final rows = _result?.data ?? [];
     if (rows.isEmpty) {

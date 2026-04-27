@@ -66,6 +66,7 @@ export 'src/widgets/stat_widget.dart';
 export 'src/widgets/chart_widget.dart';
 export 'src/widgets/table_widget.dart';
 export 'src/widgets/relation_tabs.dart';
+export 'src/widgets/error_view.dart';
 
 // Panel & navigation
 export 'src/panel/panel.dart';

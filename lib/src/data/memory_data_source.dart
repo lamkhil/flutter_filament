@@ -70,6 +70,7 @@ class MemoryDataSource<T> extends DataSource<T> {
     final withId = {...data, 'id': data['id'] ?? _nextId()};
     final record = fromMap(withId);
     _store.add(record);
+    notifyChanged();
     return record;
   }
 
@@ -82,12 +83,14 @@ class MemoryDataSource<T> extends DataSource<T> {
     final merged = {...toMap(_store[idx]), ...data, 'id': id};
     final updated = fromMap(merged);
     _store[idx] = updated;
+    notifyChanged();
     return updated;
   }
 
   @override
   Future<void> delete(String id) async {
     _store.removeWhere((r) => idOf(r) == id);
+    notifyChanged();
   }
 
   String _nextId() => 'mem_${++_seq}';

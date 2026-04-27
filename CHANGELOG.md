@@ -22,6 +22,54 @@
 ## 0.1.1
 - Fix null pointer di parser
 
+## 0.2.3
+
+- Public `ErrorView` widget (di `flutter_filament` exports). Pakai dari
+  `StreamBuilder` / `FutureBuilder` / page custom mana saja yang punya
+  error state — jadi UX error konsisten di seluruh app, tidak terbatas
+  ke `TableBuilderWidget`. Props: `error`, `onRetry?`, `message?`,
+  `padding?`, `maxWidth?`. Public statics: `ErrorView.extractUrls(text)`
+  + `ErrorView.linkLabel(url)`.
+- Error state sekarang:
+  - Pesan error pakai `SelectableText` (admin bisa copy stack trace).
+  - URL di pesan di-extract via regex dan di-render jadi tombol
+    "Buka link" (label "Buka link untuk buat index" kalau URL terdeteksi
+    sebagai index console — `/indexes` atau `create_composite=`).
+    Tombol pakai `url_launcher` dengan `LaunchMode.externalApplication` —
+    di web buka tab baru, di mobile buka browser eksternal.
+  - Tombol "Coba lagi" otomatis muncul kalau `onRetry` di-pass.
+- `TableBuilderWidget` error state di-refactor pakai `ErrorView` (tidak
+  ada perubahan visual buat caller).
+- `ErrorView` otomatis `developer.log` setiap error masuk (sekali per
+  identitas error, tidak spam di rebuild). Index URL juga di-`print`
+  terpisah dengan tag `[firestore.index]` supaya gampang di-grep di
+  browser console / `flutter run` log.
+- Public statics:
+  - `ErrorView.isIndexUrl(url)` — true kalau URL match `/indexes` atau
+    `create_composite=`.
+  - `ErrorView.linkLabel(url)` — label otomatis "Buka link untuk buat
+    index" / "Buka link".
+  - `ErrorView.report(error, {message?})` — log error tanpa render UI.
+    Pakai dari catch block / flow yang tidak punya widget tree, supaya
+    error tetap masuk ke `developer.log` dengan tag yang tepat.
+  - `ErrorView.showAsSnackBar(context, error, {message?, duration?})` —
+    tampilkan SnackBar + auto log + action "Buka link" kalau pesan error
+    mengandung URL (utamanya index URL Firestore).
+- Dependency baru: `url_launcher: ^6.3.1`.
+
+## 0.2.2
+
+- `DataSource<T>` punya `Listenable get onChange` + helper `notifyChanged()`.
+  `MemoryDataSource` sudah memanggilnya pada `create` / `update` / `delete`;
+  custom implementation perlu memanggil `notifyChanged()` setelah mutasi
+  agar table refresh otomatis.
+- `TableBuilderWidget` subscribe ke `dataSource.onChange` dan re-fetch
+  otomatis ketika data source ber-mutasi. Memperbaiki kasus list page
+  yang stale setelah edit/create/delete kembali via `context.go(...)`
+  (GoRouter sering mempertahankan instance list page sehingga `initState`
+  tidak ter-trigger lagi).
+- Additive — tidak ada breaking change.
+
 ## 0.2.1
 
 - `ResourcePage.list/create/view/edit` factory sekarang menerima parameter
